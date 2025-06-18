@@ -8,38 +8,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y zip unzip openjdk-11-jdk python3-pip python3-setuptools python3-dev build-essential
-          pip install --upgrade pip
-          pip install buildozer cython
+    - name: Set up Android SDK
+      run: |
+        mkdir -p $HOME/android-sdk
+        curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+        unzip sdk.zip -d $HOME/android-sdk/cmdline-tools
+        mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+        export ANDROID_HOME=$HOME/android-sdk
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+        yes | sdkmanager --licenses
+        sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
 
-      - name: Accept Android SDK licenses
-        run: |
-          yes | sdkmanager --licenses || true
-        env:
-          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y zip unzip openjdk-11-jdk python3-pip python3-setuptools python3-dev build-essential
+        pip install --upgrade pip
+        pip install buildozer cython
 
-      - name: Initialize Buildozer config
-        run: |
-          if [ ! -f buildozer.spec ]; then
-            buildozer init
-          fi
-          sed -i '/^requirements *=/d' buildozer.spec
-          echo "requirements = python3,kivy,requests" >> buildozer.spec
-          sed -i '/^android.permissions *=/d' buildozer.spec
-          echo "android.permissions = INTERNET" >> buildozer.spec
+    - name: Init Buildozer (if not exists)
+      run: |
+        if [ ! -f buildozer.spec ]; then
+          buildozer init
+        fi
+        sed -i '/^requirements *=/d' buildozer.spec
+        echo "requirements = python3,kivy,requests" >> buildozer.spec
+        sed -i '/^android.permissions *=/d' buildozer.spec
+        echo "android.permissions = INTERNET" >> buildozer.spec
+      env:
+        ANDROID_HOME: $HOME/android-sdk
+        PATH: $HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH
 
-      - name: Build APK
-        run: |
-          buildozer android debug
+    - name: Build APK
+      run: |
+        buildozer android debug
+      env:
+        ANDROID_HOME: $HOME/android-sdk
+        PATH: $HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-apk
-          path: bin/*.apk
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-apk
+        path: bin/*.apk
