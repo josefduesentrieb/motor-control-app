@@ -25,15 +25,15 @@ jobs:
         yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
         $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
 
-    - name: Set up Python and Buildozer
+    - name: Install Buildozer
       run: |
-        python3 -m venv venv
-        source venv/bin/activate
-        pip install --upgrade pip
+        python3 -m pip install --upgrade pip
         pip install cython buildozer
-        echo "source $GITHUB_WORKSPACE/venv/bin/activate" >> $GITHUB_ENV
+
+    - name: Set environment variables
+      run: |
         echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+        echo "$HOME/.local/bin:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_PATH
 
     - name: Init Buildozer (if needed)
       run: |
@@ -46,8 +46,7 @@ jobs:
         echo "android.permissions = INTERNET" >> buildozer.spec
 
     - name: Build APK
-      run: |
-        buildozer android debug
+      run: buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
