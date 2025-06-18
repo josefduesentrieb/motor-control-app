@@ -8,8 +8,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout code
       uses: actions/checkout@v3
+
+    - name: Install system dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y zip unzip openjdk-11-jdk python3-pip python3-setuptools python3-dev build-essential libffi-dev libssl-dev
 
     - name: Set up Android SDK
       run: |
@@ -17,19 +22,20 @@ jobs:
         curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
         unzip sdk.zip -d $HOME/android-sdk/cmdline-tools
         mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-        export ANDROID_HOME=$HOME/android-sdk
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-        yes | sdkmanager --licenses
-        sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
+        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
 
-    - name: Install dependencies
+    - name: Set up Python and Buildozer
       run: |
-        sudo apt update
-        sudo apt install -y zip unzip openjdk-11-jdk python3-pip python3-setuptools python3-dev build-essential
+        python3 -m venv venv
+        source venv/bin/activate
         pip install --upgrade pip
-        pip install buildozer cython
+        pip install cython buildozer
+        echo "source $GITHUB_WORKSPACE/venv/bin/activate" >> $GITHUB_ENV
+        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+        echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
 
-    - name: Init Buildozer (if not exists)
+    - name: Init Buildozer (if needed)
       run: |
         if [ ! -f buildozer.spec ]; then
           buildozer init
@@ -38,16 +44,10 @@ jobs:
         echo "requirements = python3,kivy,requests" >> buildozer.spec
         sed -i '/^android.permissions *=/d' buildozer.spec
         echo "android.permissions = INTERNET" >> buildozer.spec
-      env:
-        ANDROID_HOME: $HOME/android-sdk
-        PATH: $HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH
 
     - name: Build APK
       run: |
         buildozer android debug
-      env:
-        ANDROID_HOME: $HOME/android-sdk
-        PATH: $HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
