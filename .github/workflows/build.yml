@@ -8,26 +8,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y zip unzip openjdk-11-jdk python3-pip python3-setuptools python3-dev build-essential
-        pip install buildozer cython
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y zip unzip openjdk-11-jdk python3-pip python3-setuptools python3-dev build-essential
+          pip install --upgrade pip
+          pip install buildozer cython
 
-    - name: Initialize Buildozer
-      run: |
-        buildozer init
-        sed -i 's/^# *requirements.*/requirements = python3,kivy,requests/' buildozer.spec
-        sed -i 's/^# *android.permissions.*/android.permissions = INTERNET/' buildozer.spec
+      - name: Prepare buildozer.spec
+        run: |
+          if [ ! -f buildozer.spec ]; then
+            buildozer init
+          fi
 
-    - name: Build APK
-      run: |
-        buildozer android debug
+          # Ensure only one requirements line
+          sed -i '/^requirements *=/d' buildozer.spec
+          echo "requirements = python3,kivy,requests" >> buildozer.spec
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-apk
-        path: bin/*.apk
+          # Ensure only one permissions line
+          sed -i '/^android.permissions *=/d' buildozer.spec
+          echo "android.permissions = INTERNET" >> buildozer.spec
+
+      - name: Build APK
+        run: |
+          buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-apk
+          path: bin/*.apk
