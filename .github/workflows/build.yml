@@ -18,14 +18,19 @@ jobs:
 
     - name: Set up Android SDK
       run: |
-        mkdir -p $HOME/android-sdk
+        mkdir -p $HOME/android-sdk/cmdline-tools
         curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
         unzip sdk.zip -d $HOME/android-sdk/cmdline-tools
         mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
 
-    - name: Install Buildozer
+        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager \
+          "platform-tools" \
+          "build-tools;33.0.2" \
+          "platforms;android-33"
+
+    - name: Install Buildozer and dependencies
       run: |
         python3 -m pip install --upgrade pip
         pip install cython buildozer
@@ -35,7 +40,7 @@ jobs:
         echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
         echo "$HOME/.local/bin:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_PATH
 
-    - name: Init Buildozer (if needed)
+    - name: Initialize Buildozer config if needed
       run: |
         if [ ! -f buildozer.spec ]; then
           buildozer init
