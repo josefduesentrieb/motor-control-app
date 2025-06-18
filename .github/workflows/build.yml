@@ -22,13 +22,8 @@ jobs:
         curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
         unzip sdk.zip -d $HOME/android-sdk/cmdline-tools
         mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-
         yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-
-        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager \
-          "platform-tools" \
-          "build-tools;33.0.2" \
-          "platforms;android-33"
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.2" "platforms;android-33"
 
     - name: Install Buildozer and dependencies
       run: |
@@ -38,17 +33,26 @@ jobs:
     - name: Set environment variables
       run: |
         echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "$HOME/.local/bin:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
-    - name: Initialize Buildozer config if needed
+    - name: Initialize Buildozer and configure buildozer.spec
       run: |
         if [ ! -f buildozer.spec ]; then
           buildozer init
         fi
+        # Remove existing requirements and permissions to avoid duplicates
         sed -i '/^requirements *=/d' buildozer.spec
-        echo "requirements = python3,kivy,requests" >> buildozer.spec
         sed -i '/^android.permissions *=/d' buildozer.spec
+        # Add required lines
+        echo "requirements = python3,kivy,requests" >> buildozer.spec
         echo "android.permissions = INTERNET" >> buildozer.spec
+        # Force build-tools and sdk versions to match installed versions
+        sed -i '/^android.sdk *=/d' buildozer.spec
+        sed -i '/^android.build_tools_version *=/d' buildozer.spec
+        echo "android.sdk = 33" >> buildozer.spec
+        echo "android.build_tools_version = 33.0.2" >> buildozer.spec
 
     - name: Build APK
       run: buildozer android debug
