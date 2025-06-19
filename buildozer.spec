@@ -1,35 +1,25 @@
-name: Build APK
+[app]
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
+title = MotorControlApp
+package.name = motorcontrol
+package.domain = org.example
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+source.dir = .
+version = 0.1
+entrypoint = main.py
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+requirements = python3,kivy,requests
 
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk
-        pip3 install --upgrade cython==0.29.33 buildozer
+fullscreen = 1
+android.permissions = INTERNET
 
-    - name: Install Android SDK & NDK dependencies for Buildozer
-      run: |
-        buildozer android sdk
+android.api = 33
+android.minapi = 21
+android.sdk = 24
+android.ndk = 25b
+android.ndk_api = 21
 
-    - name: Build APK
-      run: |
-        buildozer -v android debug
+android.entrypoint = org.kivy.android.PythonActivity
+android.theme = '@android:style/Theme.NoTitleBar'
 
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: apk
-        path: bin/*.apk
+copy_libraries = 1
