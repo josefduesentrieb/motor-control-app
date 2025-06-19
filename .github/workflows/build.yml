@@ -16,19 +16,13 @@ jobs:
       PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:$PATH
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Install dependencies
-      run: sudo apt update && sudo apt install -y tar unzip wget openjdk-11-jdk python3-pip git
-    
-    - name: Download and extract Android SDK tools
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install system dependencies
       run: |
-        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-        cd $ANDROID_SDK_ROOT/cmdline-tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        unzip cmdline-tools.zip
-        rm cmdline-tools.zip
-        mv cmdline-tools latest
+        sudo apt update
+        sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk wget
 
     - name: Install Python dependencies
       run: |
@@ -44,17 +38,14 @@ jobs:
         mv cmdline-tools latest
 
     - name: Accept Android SDK licenses
-      run: |
-        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+      run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
 
     - name: Install Android SDK build tools and platforms
-      run: |
-        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+      run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
           "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
     - name: Build APK with Buildozer
-      run: |
-        buildozer -v android debug
+      run: buildozer -v android debug
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
