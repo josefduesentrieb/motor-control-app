@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: androidsdk/android-sdk:latest
+      image: circleci/android:api-33
 
     steps:
     - uses: actions/checkout@v3
