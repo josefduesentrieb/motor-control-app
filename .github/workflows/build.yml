@@ -9,17 +9,43 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: circleci/android:api-33
+
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:$PATH
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install dependencies
+    - name: Install system dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk wget
+
+    - name: Install Python dependencies
       run: |
         pip3 install --upgrade cython==0.29.33 buildozer
 
-    - name: Build APK
+    - name: Download and setup Android SDK command line tools
+      run: |
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        cd $ANDROID_SDK_ROOT/cmdline-tools
+        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+        unzip cmdline-tools.zip
+        rm cmdline-tools.zip
+        mv cmdline-tools latest
+
+    - name: Accept Android SDK licenses
+      run: |
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+
+    - name: Install Android SDK build tools and platforms
+      run: |
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+          "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+    - name: Build APK with Buildozer
       run: |
         buildozer -v android debug
 
@@ -28,4 +54,3 @@ jobs:
       with:
         name: apk
         path: bin/*.apk
-
