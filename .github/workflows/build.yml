@@ -2,7 +2,8 @@ name: Build APK
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -10,23 +11,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up Android SDK
-        uses: actions/setup-android@v2
-        with:
-          api-level: 33
-          build-tools: 36.0.0
-          ndk-version: 25.2.9519653
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk
+        pip3 install --upgrade cython==0.29.33 buildozer
 
-      - name: Install dependencies and build APK
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3 python3-pip
-          pip3 install --upgrade buildozer
-          buildozer android clean
-          buildozer android debug
+    - name: Install Android SDK & NDK dependencies for Buildozer
+      run: |
+        buildozer android sdk
 
-      - name: Build APK
-        run: buildozer android debug
+    - name: Build APK
+      run: |
+        buildozer -v android debug
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: apk
+        path: bin/*.apk
