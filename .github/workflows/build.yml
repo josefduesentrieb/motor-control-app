@@ -11,42 +11,38 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install system dependencies
+    - name: Install essential packages
       run: |
-        sudo apt update
-        sudo apt install -y zip unzip openjdk-11-jdk python3-pip python3-setuptools python3-dev build-essential libffi-dev libssl-dev
+        sudo apt-get update
+        sudo apt-get install -y coreutils bash zip unzip openjdk-11-jdk python3-pip python3-setuptools python3-dev build-essential libffi-dev libssl-dev
 
-    - name: Download and setup Android SDK command line tools
+    - name: Set up Android SDK
       run: |
         mkdir -p $HOME/android-sdk/cmdline-tools
-        curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-        unzip sdk-tools.zip -d $HOME/android-sdk/cmdline-tools
+        curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+        unzip sdk.zip -d $HOME/android-sdk/cmdline-tools
         mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-
-    - name: Set environment variables
-      run: |
-        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
-
-    - name: Accept licenses and install SDK components
-      env:
-        ANDROID_HOME: ${{ env.ANDROID_HOME }}
-        PATH: ${{ env.PATH }}
-      run: |
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_HOME} "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+        export ANDROID_HOME=$HOME/android-sdk
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+        yes | sdkmanager --sdk_root=${ANDROID_HOME} --licenses
+        sdkmanager --sdk_root=${ANDROID_HOME} "platforms;android-33" "build-tools;33.0.2" "platform-tools"
 
     - name: Install Buildozer and dependencies
       run: |
         python3 -m pip install --upgrade pip
         pip install cython buildozer
 
-    - name: Initialize buildozer.spec (if missing)
+    - name: Set environment variables
+      run: |
+        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+        echo "$HOME/.local/bin:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_PATH
+
+    - name: Initialize Buildozer spec
       run: |
         if [ ! -f buildozer.spec ]; then
           buildozer init
         fi
+        # Remove duplicate 'requirements' and 'android.permissions' entries if they exist
         sed -i '/^requirements *=/d' buildozer.spec
         echo "requirements = python3,kivy,requests" >> buildozer.spec
         sed -i '/^android.permissions *=/d' buildozer.spec
@@ -55,7 +51,7 @@ jobs:
     - name: Build APK
       run: buildozer android debug
 
-    - name: Upload APK
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-apk
