@@ -13,26 +13,15 @@ fullscreen = 1
 android.permissions = INTERNET
 
 android.api = 33
+android.build_tools_version = 36.0.0
+android.ndk = 25.2.9519653
 android.minapi = 21
-android.ndk = 25b
 android.archs = armeabi-v7a, arm64-v8a
 android.copy_libs = 1
 
-# (str) Icon of the application
+# Uncomment and set if you have an icon or presplash
 # icon.filename = %(source.dir)s/icon.png
-
-# (str) Presplash of the application
 # presplash.filename = %(source.dir)s/data/presplash.png
-
-# (list) List of Java .jar files to add to the libs so that pyjnius can access
-# android.add_jars = libs/somejar.jar
-
-# (str) Custom source folders for requirements
-# (Separate multiple paths with commas)
-# requirements.source.kivy = ../kivy
-
-# (bool) Enables TouchRing support for supported devices
-# android.touchring = 1
 
 [buildozer]
 log_level = 2
