@@ -10,25 +10,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk 
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:$PATH
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - name: Debug runner info
+      run: |
+        echo "PATH=$PATH"
+        which tar || echo "tar not found"
+        tar --version || echo "tar version check failed"
+
+    - name: Checkout repository using Git CLI (workaround)
+      run: |
+        git --version
+        git clone https://github.com/${{ github.repository }} ${{ github.workspace }}
 
     - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk wget
+        sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk wget tar
 
     - name: Install Python dependencies
       run: |
         pip3 install --upgrade cython==0.29.33 buildozer
 
-    - name: Download and setup Android SDK command line tools
+    - name: Setup Android SDK command line tools
+      env:
+        ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       run: |
         mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
         cd $ANDROID_SDK_ROOT/cmdline-tools
@@ -37,12 +42,15 @@ jobs:
         rm cmdline-tools.zip
         mv cmdline-tools latest
 
-    - name: Accept Android SDK licenses
+    - name: Accept licenses
+      env:
+        ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
 
-    - name: Install Android SDK build tools and platforms
-      run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
-          "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+    - name: Install SDK components
+      env:
+        ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
     - name: Build APK with Buildozer
       run: buildozer -v android debug
