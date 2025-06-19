@@ -49,7 +49,7 @@ jobs:
         sed -i '/^android.permissions *=/d' buildozer.spec
         echo "android.permissions = INTERNET" >> buildozer.spec
         sed -i '/^# *android.sdk_path =/d' buildozer.spec
-        echo "android.sdk_path = $HOME/android-sdk" >> buildozer.spec
+        echo "android.sdk_path = /home/runner/android-sdk" >> buildozer.spec
 
     - name: Clean buildozer cache
       run: |
