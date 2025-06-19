@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/cirruslabs/android-sdk:latest  # Popular image with preinstalled SDK and licenses
+      image: androidsdk/android-sdk:latest
 
     steps:
     - uses: actions/checkout@v3
@@ -28,3 +28,4 @@ jobs:
       with:
         name: apk
         path: bin/*.apk
+
