@@ -1,6 +1,9 @@
-name: Build APK
+name: Build Kivy APK
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -8,54 +11,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install essential packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y coreutils bash zip unzip openjdk-11-jdk python3-pip python3-setuptools python3-dev build-essential libffi-dev libssl-dev
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - name: Set up Android SDK
-      run: |
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
-        unzip sdk.zip -d $HOME/android-sdk/cmdline-tools
-        mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-        export ANDROID_HOME=$HOME/android-sdk
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-        yes | sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-        sdkmanager --sdk_root=${ANDROID_HOME} "platforms;android-33" "build-tools;33.0.2" "platform-tools"
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip python3-setuptools python3-wheel build-essential libffi-dev libssl-dev libsqlite3-dev zlib1g-dev
+          pip install --upgrade pip
+          pip install buildozer Cython
 
-    - name: Install Buildozer and dependencies
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install cython buildozer
-
-    - name: Set environment variables
-      run: |
-        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "$HOME/.local/bin:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_PATH
-
-    - name: Initialize Buildozer spec
-      run: |
-        if [ ! -f buildozer.spec ]; then
+      - name: Initialize buildozer
+        run: |
           buildozer init
-        fi
-        sed -i '/^requirements *=/d' buildozer.spec
-        echo "requirements = python3,kivy,requests" >> buildozer.spec
-        sed -i '/^android.permissions *=/d' buildozer.spec
-        echo "android.permissions = INTERNET" >> buildozer.spec
-        sed -i '/^android.build_tools_version *=/d' buildozer.spec
-        echo "android.build_tools_version = 33.0.2" >> buildozer.spec
-        sed -i '/^android.sdk *=/d' buildozer.spec
-        echo "android.sdk = 33" >> buildozer.spec
-        
-    - name: Build APK
-      run: buildozer android debug
 
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-apk
-        path: bin/*.apk
+      - name: Configure buildozer.spec
+        run: |
+          sed -i 's/^title = .*/title = MotorApp/' buildozer.spec
+          sed -i 's/^package.name = .*/package.name = motorapp/' buildozer.spec
+          sed -i 's/^package.domain = .*/package.domain = org.example/' buildozer.spec
+          sed -i 's/^source.include_exts = .*/source.include_exts = py,png,jpg,kv,atlas/' buildozer.spec
+          sed -i 's/^# requirements = .*/requirements = python3,kivy,requests/' buildozer.spec
+          sed -i 's/^# android.permissions = .*/android.permissions = INTERNET/' buildozer.spec
+          echo "android.api = 33" >> buildozer.spec
+          echo "android.minapi = 21" >> buildozer.spec
+          echo "android.ndk = 25b" >> buildozer.spec
+
+      - name: Build APK
+        run: |
+          buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: MotorApp-APK
+          path: bin/*.apk
