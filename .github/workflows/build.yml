@@ -17,11 +17,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
+    
     - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk wget
+        sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk wget tar
 
     - name: Install Python dependencies
       run: |
