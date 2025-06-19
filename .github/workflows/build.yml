@@ -20,11 +20,13 @@ jobs:
           build-tools: 36.0.0
           ndk-version: 25.2.9519653
 
-      - name: Install dependencies
+      - name: Install dependencies and build APK
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip
           pip3 install --upgrade buildozer
+          buildozer android clean
+          buildozer android debug
 
       - name: Build APK
         run: buildozer android debug
