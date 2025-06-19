@@ -24,3 +24,9 @@ android.entrypoint = org.kivy.android.PythonActivity
 android.theme = '@android:style/Theme.NoTitleBar'
 
 copy_libraries = 1
+
+[environment]
+ANDROIDSDK = %(ANDROID_SDK_ROOT)s
+ANDROIDNDK = %(ANDROID_SDK_ROOT)s/ndk/23.1.7779620
+ANDROIDAPI = 33
+ANDROIDMINAPI = 21
